@@ -51,3 +51,15 @@ Definir a arquitetura completa do sistema e desenvolver um protótipo funcional 
 - **Aplicação → Transporte → Rede → Enlace → Física.**
 - O dashboard pode ser simples, mas funcional (exibição periódica dos valores recebidos).
 - A apresentação final deve incluir uma demonstração prática do sistema completo.
+
+***
+
+# Rodando o Projeto
+
+Inicie o servidor:
+
+```bash
+python .\monitoramento-lora\server\server.py
+```
+
+Acesse http://localhost:8080 para verificar os dados coletados.
