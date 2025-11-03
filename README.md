@@ -32,13 +32,16 @@ Requisitos Gerais
 **Objetivo:**
 Definir a arquitetura completa do sistema e desenvolver um protótipo funcional do servidor e dashboard, mesmo com dados simulados (sem hardware real).
 
-**Escopo:** - Definição da **arquitetura geral** (módulos, fluxos de dados e camadas).
+**Escopo:**
+- Definição da **arquitetura geral** (módulos, fluxos de dados e camadas).
 - Escolha das tecnologias e definição de formato de mensagem (ex.: JSON).
 - Implementação do **servidor** e **dashboard** utilizando **apenas bibliotecas padrão do Python**, com dados simulados.
 - Exemplo: um script Python gerando dados falsos de temperatura/umidade e enviando via `socket` ou `HTTP` para o servidor.
 - Dashboard inicial para exibição dos dados (pode ser em terminal ou HTML simples via `http.server`).
 
-**Produtos esperados:** - Documento (3–4 páginas) contendo: - Diagrama da arquitetura.
+**Produtos esperados:**
+Documento (3–4 páginas) contendo:
+- Diagrama da arquitetura.
 - Descrição dos módulos e formato das mensagens.
 - Especificação do fluxo de dados.
 - Protótipo funcional com servidor e dashboard recebendo dados simulados.
