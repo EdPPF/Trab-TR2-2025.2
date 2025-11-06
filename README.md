@@ -57,12 +57,32 @@ Documento (3–4 páginas) contendo:
 
 ***
 
+## **Entregável 2 – Integração com Hardware**
+
+**Objetivo:**
+Integrar o sistema com os componentes físicos (Arduino e LoRa), garantindo comunicação ponta a ponta.
+
+**Escopo:**
+- Implementação dos clientes LoRa com Arduino.
+- Sensores reais (temperatura, umidade) ou dados simulados.
+- Configuração e integração do gateway LoRa (ex.: Arduino + receptor LoRa + comunicação serial ou PC).
+- Envio dos dados do gateway para o servidor via Python com bibliotecas padrão (socket, json, threading).
+- Ajuste do formato das mensagens e do dashboard.
+
+**Produtos esperados:**
+- Código do cliente e do gateway.
+- Demonstração da comunicação real: Cliente → Gateway → Servidor → Dashboard.
+- Documento curto (2–3 páginas) descrevendo: - Integração e ajustes realizados.
+- Problemas e soluções.
+
+***
+
 # Rodando o Projeto
 
-Inicie o servidor:
+Instale a(s) dependência(s):
 
 ```bash
-python .\monitoramento-lora\server\server.py
+pip install -r requirements.txt
 ```
 
-Acesse http://localhost:8080 para verificar os dados coletados.
+> TODO
