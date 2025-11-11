@@ -51,6 +51,7 @@
         gap: 8px;
         align-items: center;
         margin-bottom: 8px;
+        margin-top: 8px;
         flex-wrap: wrap
       }
       input, select, button {
@@ -92,11 +93,8 @@
 
     <div class="card">
       <p style="margin: 0;">Grupo 2: Eduardo Ferreira (190026987), Leonardo Cortês (200030582) e Rychard Ryan (190095229)</p>
-      <h3>Como executar o simulador</h3>
       <div>
-        1. Inicie o servidor: <code>python servidor.py</code><br>
-        2. Rode o cliente simulador: <code>python cliente.py</code><br>
-        3. Abra <code>http://localhost:8080/</code>
+        <p>Leia o arquivo <code>README.md</code> para instruções de como executar o simulador<br></p>
       </div>
       <div class="controls" style="margin-top:8px">
         <label>URL do servidor:</label>
@@ -361,7 +359,7 @@
         BASE = document.getElementById("baseUrl").value.trim().replace(/\/+$/,'');
         try {
           const items = await apiList({limit: 1});
-          document.getElementById("srvInfo").textContent = `OK • ${items.length} itens`;
+          document.getElementById("srvInfo").textContent = `OK`;
         } catch(e) {
           document.getElementById("srvInfo").textContent = `Falhou`;
         }
