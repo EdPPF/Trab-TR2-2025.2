@@ -85,4 +85,51 @@ Instale a(s) dependência(s):
 pip install -r requirements.txt
 ```
 
-> TODO
+Execute o servidor:
+```bash
+cd monitoramento-lora/server
+python3 server.py
+```
+
+Abra o navegador em `http://localhost:8080`
+
+### 1. Teste direto via cliente simulado (`send_simulated.py`):
+
+Em outro terminal, execute:
+
+```bash
+cd monitoramento-lora/simulated_client
+python3 send_simulated.py
+```
+
+Atualize o dashboard
+
+### 2. Teste do gateway serial sem hardware:
+
+Em outro terminal, execute:
+
+```bash
+cd monitoramento-lora/simulated_client
+python3 gateway_serial_forwarder.py --stdin
+```
+
+Digite por exemplo:
+```bash
+id=rack1;temp=22.5;umid=48.2;poeira=32
+```
+
+Atualize o dashboard.
+
+# Estrutura do projeto
+
+dashboard/index.html -> recebe os dados do banco e exibe para o usuário
+
+server.py -> recebe JSON, grava no banco e exibe no dashboard.
+
+send_simulated.py -> envia dados falsos direto via HTTP (para testes sem hardware).
+
+gateway_serial_forwarder.py -> roda no PC e reenvia para o servidor HTTP.
+
+node_sensor.ino -> código que envia os dados via LoRa (simulados ou sensores reais).
+
+gateway_lora_serial.ino -> código que recebe via LoRa e envia pela USB Serial.
