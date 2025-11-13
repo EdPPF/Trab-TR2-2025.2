@@ -109,7 +109,7 @@ Atualize a dashboard.
 Em outro terminal, execute:
 
 ```bash
-cd monitoramento-lora/simulated_client
+cd monitoramento-lora/gateway
 python3 gateway_serial_forwarder.py --stdin
 ```
 
@@ -122,6 +122,26 @@ id=rack1;temp=25;umid=40;poeira=30
 Atualize a dashboard.
 
 # Estrutura do projeto
+
+```
+trab
+├─ docs/
+├─ monitoramento-lora/
+│  ├─ arduino/
+│  │  ├─ gateway_lora_serial.ino
+│  │  └─ node_sensor.ino
+│  ├─ dashboard/
+│  │  └─ index.html
+│  ├─ gateway/
+│  │  └─ gateway_serial_forwarder.py
+│  ├─ server/
+│  │  ├─ dados.db
+│  │  └─ server.py
+│  └─ simulated_client/
+│     └─ send_simulated.py
+├─ README.md
+└─ requirements.txt
+```
 
 `dashboard/index.html` -> recebe os dados do banco e exibe para o usuário
 
