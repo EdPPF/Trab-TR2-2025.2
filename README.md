@@ -93,18 +93,18 @@ python3 server.py
 
 Abra o navegador em `http://localhost:8080`
 
-### 1. Teste direto via cliente simulado (`send_simulated.py`):
+## 1. Teste via cliente simulado (`send_simulated.py`):
 
 Em outro terminal, execute:
 
 ```bash
-cd monitoramento-lora/simulated_client
-python3 send_simulated.py
+cd monitoramento-lora/gateway
+python3 simulated_data.py
 ```
 
 Atualize a dashboard.
 
-### 2. Teste do gateway serial sem hardware:
+## 2. Teste do gateway serial sem hardware:
 
 Em outro terminal, execute:
 
@@ -121,6 +121,30 @@ id=rack1;temp=25;umid=40;poeira=30
 
 Atualize a dashboard.
 
+## 3. Teste com hardware
+
+Em outro terminal, execute:
+
+```bash
+cd monitoramento-lora/gateway
+# detecção automática da porta
+python3 gateway_serial_forwarder.py
+# ou passagem manual da porta
+python3 gateway_serial_forwarder.py --serial <porta>
+```
+
+Atualize a dashboard.
+
+### 3.1 Apenas com sensor 
+
+Se apenas o sensor estiver energizado, o gateway ESP não é utilizado e os dados são passados diretamente pela porta USB.
+
+`LoRa Sensor -> ESP SENSOR -> USB/Serial -> gateway_serial_forwarder.py -> servidor -> dashboard`
+
+### 3.2 Com sensor e gateway 
+
+`LoRa Sensor -> ESP SENSOR -> LoRa Gateway -> ESP GATEWAY -> USB/Serial -> gateway_serial_forwarder.py -> servidor -> dashboard` 
+
 # Estrutura do projeto
 
 ```
@@ -128,29 +152,28 @@ trab
 ├─ docs/
 ├─ monitoramento-lora/
 │  ├─ arduino/
-│  │  ├─ gateway_lora_serial.ino
-│  │  └─ node_sensor.ino
+│  │  ├─ gateway_lora/gateway_lora.ino
+│  │  └─ sensor_lora/sensor_lora.ino
 │  ├─ dashboard/
 │  │  └─ index.html
 │  ├─ gateway/
-│  │  └─ gateway_serial_forwarder.py
+│  │  ├─ gateway_serial_forwarder.py
+│  │  └─ simulated_data.py
 │  ├─ server/
 │  │  ├─ dados.db
 │  │  └─ server.py
-│  └─ simulated_client/
-│     └─ send_simulated.py
 ├─ README.md
 └─ requirements.txt
 ```
 
 `dashboard/index.html` -> recebe os dados do banco e exibe para o usuário
 
-`server.py` -> recebe JSON, grava no banco e exibe no dashboard.
+`server.py` -> recebe JSON, grava no banco os dados a serem exibidos na dashboard.
 
-`send_simulated.py` -> envia dados falsos direto via HTTP (para testes sem hardware).
+`simulated_data.py` -> envia dados falsos direto via HTTP (para testes sem hardware).
 
 `gateway_serial_forwarder.py` -> roda no PC e reenvia para o servidor HTTP.
 
-`node_sensor.ino` -> código que envia os dados via LoRa (simulados ou sensores reais).
+`sensor_lora.ino` -> código que envia os dados via LoRa (simulados ou sensores reais).
 
-`gateway_lora_serial.ino` -> código que recebe via LoRa e envia pela USB Serial.
+`gateway_lora.ino` -> código que recebe via LoRa e envia pela USB Serial.

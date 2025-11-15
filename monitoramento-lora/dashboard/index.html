@@ -85,6 +85,10 @@
         margin-left: 6px;
         font-size: 12px
       }
+      #seriesCanvas {
+        width: 600px;
+        height: 300px;
+      }
     </style>
   </head>
 
@@ -239,8 +243,8 @@
         items = items.slice().reverse();
         const canvas = document.getElementById("seriesCanvas");
         const ctx = canvas.getContext("2d");
-        const w = canvas.width = canvas.clientWidth * 1.5;
-        const h = canvas.height = canvas.clientHeight * 1.5;
+        const w = canvas.width = canvas.clientWidth;
+        const h = canvas.height = canvas.clientHeight;
         ctx.clearRect(0,0,w,h);
 
         const vals = items.map(i => Number(i[metricKey]));
