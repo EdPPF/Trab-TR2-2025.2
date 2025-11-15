@@ -102,7 +102,7 @@ cd monitoramento-lora/gateway
 python3 simulated_data.py
 ```
 
-Atualize a dashboard.
+Por fim, atualize a dashboard para ver os resultados.
 
 ## 2. Teste do gateway serial sem hardware:
 
@@ -113,15 +113,17 @@ cd monitoramento-lora/gateway
 python3 gateway_serial_forwarder.py --stdin
 ```
 
-Digite por exemplo:
+Digite os dados, como por exemplo:
 
 ```bash
 id=rack1;temp=25;umid=40;poeira=30
 ```
 
-Atualize a dashboard.
+Por fim, atualize a dashboard para ver os resultados.
 
 ## 3. Teste com hardware
+
+O módulo ESP LoRa Sensor é conectado a um sensor de temperatura e umidade DHT11 por meio do pino D4 (GPIO4).
 
 Em outro terminal, execute:
 
@@ -133,15 +135,17 @@ python3 gateway_serial_forwarder.py
 python3 gateway_serial_forwarder.py --serial <porta>
 ```
 
-Atualize a dashboard.
+Por fim, atualize a dashboard para ver os resultados.
 
 ### 3.1 Apenas com sensor 
 
-Se apenas o sensor estiver energizado, o gateway ESP não é utilizado e os dados são passados diretamente pela porta USB.
+Se apenas o sensor estiver energizado e ligado a porta do gateway python, o gateway ESP não é utilizado e os dados são passados diretamente pela porta USB. Fluxo:
 
 `LoRa Sensor -> ESP SENSOR -> USB/Serial -> gateway_serial_forwarder.py -> servidor -> dashboard`
 
 ### 3.2 Com sensor e gateway 
+
+Se o gateway LoRa estiver ligado a porta do gateway python e o sensor LoRa estiver energizado, o fluxo é:
 
 `LoRa Sensor -> ESP SENSOR -> LoRa Gateway -> ESP GATEWAY -> USB/Serial -> gateway_serial_forwarder.py -> servidor -> dashboard` 
 
