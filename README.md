@@ -85,4 +85,99 @@ Instale a(s) dependência(s):
 pip install -r requirements.txt
 ```
 
-> TODO
+Execute o servidor:
+```bash
+cd monitoramento-lora/server
+python3 server.py
+```
+
+Abra o navegador em `http://localhost:8080`
+
+## 1. Teste via cliente simulado (`send_simulated.py`):
+
+Em outro terminal, execute:
+
+```bash
+cd monitoramento-lora/gateway
+python3 simulated_data.py
+```
+
+Por fim, atualize a dashboard para ver os resultados.
+
+## 2. Teste do gateway serial sem hardware:
+
+Em outro terminal, execute:
+
+```bash
+cd monitoramento-lora/gateway
+python3 gateway_serial_forwarder.py --stdin
+```
+
+Digite os dados, como por exemplo:
+
+```bash
+id=rack1;temp=25;umid=40;poeira=30
+```
+
+Por fim, atualize a dashboard para ver os resultados.
+
+## 3. Teste com hardware
+
+O módulo ESP LoRa Sensor é conectado a um sensor de temperatura e umidade DHT11 por meio do pino D4 (GPIO4).
+
+Em outro terminal, execute:
+
+```bash
+cd monitoramento-lora/gateway
+# detecção automática da porta
+python3 gateway_serial_forwarder.py
+# ou passagem manual da porta
+python3 gateway_serial_forwarder.py --serial <porta>
+```
+
+Por fim, atualize a dashboard para ver os resultados.
+
+### 3.1 Apenas com sensor 
+
+Se apenas o sensor estiver energizado e ligado a porta do gateway python, o gateway ESP não é utilizado e os dados são passados diretamente pela porta USB. Fluxo:
+
+`LoRa Sensor -> ESP SENSOR -> USB/Serial -> gateway_serial_forwarder.py -> servidor -> dashboard`
+
+### 3.2 Com sensor e gateway 
+
+Se o gateway LoRa estiver ligado a porta do gateway python e o sensor LoRa estiver energizado, o fluxo é:
+
+`LoRa Sensor -> ESP SENSOR -> LoRa Gateway -> ESP GATEWAY -> USB/Serial -> gateway_serial_forwarder.py -> servidor -> dashboard` 
+
+# Estrutura do projeto
+
+```
+trab
+├─ docs/
+├─ monitoramento-lora/
+│  ├─ arduino/
+│  │  ├─ gateway_lora/gateway_lora.ino
+│  │  └─ sensor_lora/sensor_lora.ino
+│  ├─ dashboard/
+│  │  └─ index.html
+│  ├─ gateway/
+│  │  ├─ gateway_serial_forwarder.py
+│  │  └─ simulated_data.py
+│  ├─ server/
+│  │  ├─ dados.db
+│  │  └─ server.py
+├─ README.md
+└─ requirements.txt
+```
+
+`dashboard/index.html` -> recebe os dados do banco e exibe para o usuário
+
+`server.py` -> recebe JSON, grava no banco os dados a serem exibidos na dashboard.
+
+`simulated_data.py` -> envia dados falsos direto via HTTP (para testes sem hardware).
+
+`gateway_serial_forwarder.py` -> roda no PC e reenvia para o servidor HTTP.
+
+`sensor_lora.ino` -> código que envia os dados via LoRa (simulados ou sensores reais).
+
+`gateway_lora.ino` -> código que recebe via LoRa e envia pela USB Serial.
