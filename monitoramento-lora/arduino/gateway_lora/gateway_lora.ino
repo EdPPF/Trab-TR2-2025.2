@@ -23,8 +23,7 @@ void loop() {
       line += (char)LoRa.read();
     }
     line.trim();
-    if (line.length() > 0) {
-      Serial.println(line);
-    }
+    if (!line.startsWith("id=")) return;
+    Serial.println(line);
   }
 }
