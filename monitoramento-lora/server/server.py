@@ -22,7 +22,8 @@ def init_db():
         temperatura REAL,
         umidade REAL,
         poeira REAL,
-        timestamp TEXT
+        timestamp TEXT,
+        seq INTEGER
     )
     """)
     conn.commit()
@@ -55,18 +56,24 @@ class RequestHandler(BaseHTTPRequestHandler):
         temp = payload.get("temp")
         umid = payload.get("umid")
         poeira = payload.get("poeira")
+        raw_seq = payload.get("seq")
 
         if sala is None or temp is None or umid is None or poeira is None:
             self.send_error(400, "Missing fields (sala/temp/umid/poeira)")
             return
 
-        timestamp = payload.get("timestamp") or datetime.utcnow().isoformat()
+        try:
+            seq = int(raw_seq) if raw_seq is not None else None
+        except (TypeError, ValueError):
+            seq = None
+
+        timestamp = payload.get("timestamp") or (datetime.utcnow().isoformat() + "Z")
         try:
             conn = sqlite3.connect(DB_FILE)
             cur = conn.cursor()
             cur.execute(
-                "INSERT INTO leituras (sala, temperatura, umidade, poeira, timestamp) VALUES (?, ?, ?, ?, ?)",
-                (str(sala), float(temp), float(umid), float(poeira), timestamp)
+                "INSERT INTO leituras (sala, temperatura, umidade, poeira, timestamp, seq) VALUES (?, ?, ?, ?, ?, ?)",
+                (str(sala), float(temp), float(umid), float(poeira), timestamp, seq)
             )
             conn.commit()
             conn.close()
@@ -106,19 +113,29 @@ class RequestHandler(BaseHTTPRequestHandler):
             cur = conn.cursor()
             if sala:
                 cur.execute(
-                    "SELECT id, sala, temperatura, umidade, poeira, timestamp FROM leituras WHERE sala = ? ORDER BY id DESC LIMIT ?",
+                    "SELECT id, sala, temperatura, umidade, poeira, timestamp, seq "
+                    "FROM leituras WHERE sala = ? ORDER BY id DESC LIMIT ?",
                     (sala, limit)
                 )
             else:
                 cur.execute(
-                    "SELECT id, sala, temperatura, umidade, poeira, timestamp FROM leituras ORDER BY id DESC LIMIT ?",
+                    "SELECT id, sala, temperatura, umidade, poeira, timestamp, seq "
+                    "FROM leituras ORDER BY id DESC LIMIT ?",
                     (limit,)
                 )
             rows = cur.fetchall()
             conn.close()
 
             items = [
-                {"id": r[0], "sala": r[1], "temperatura": r[2], "umidade": r[3], "poeira": r[4], "timestamp": r[5]}
+                {
+                    "id": r[0],
+                    "sala": r[1],
+                    "temperatura": r[2],
+                    "umidade": r[3],
+                    "poeira": r[4],
+                    "timestamp": r[5],
+                    "seq": r[6],
+                }
                 for r in rows
             ]
             self.send_response(200)

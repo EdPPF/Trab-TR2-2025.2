@@ -89,23 +89,40 @@
         width: 600px;
         height: 300px;
       }
+      .auto-btn-on {
+        background-color: #ca4a4a;
+        color: white;
+      }
+      .auto-btn-off {
+        background-color: #4CAF50;
+        color: white;
+      }
+      .auto-btn-on:hover {
+        background-color: #b82e2e;
+        color: white;
+      }
+      .auto-btn-off:hover {
+        background-color: #459948;
+        color: white;
+      }
     </style>
   </head>
 
   <body>
     <h1>Dashboard de Monitoramento LoRa</h1>
 
-    <div class="card">
-      <p style="margin: 0;">Grupo 2: Eduardo Ferreira (190026987), Leonardo Cortês (200030582) e Rychard Ryan (190095229)</p>
-      <div>
-        <p>Leia o arquivo <code>README.md</code> para instruções de como executar o simulador<br></p>
+    <div class="card" style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="text-align:left;">
+        <p style="margin: 0; margin-bottom: 8px;">
+          Grupo 2: Eduardo Ferreira (190026987), Leonardo Cortês (200030582) e Rychard Ryan (190095229)
+        </p>
+        <p style="margin: 0; margin-top: 8px;">
+          Leia o arquivo <code>README.md</code> para instruções de como executar o simulador<br>
+        </p>
       </div>
-      <div class="controls" style="margin-top:8px">
-        <label>URL do servidor:</label>
-        <input id="baseUrl" class="grow" placeholder="http://localhost:8080" value="">
-        <button id="btnTest">Testar conexão</button>
-        <span id="srvInfo" class="badge"></span>
-      </div>
+
+      <button id="btnToggleAuto">Pausar Auto Update</button>
+
     </div>
 
     <div class="card">
@@ -167,6 +184,7 @@
               <th>Temperatura (°C)</th>
               <th>Umidade (%)</th>
               <th>Poeira (µg/m³)</th>
+              <th>Seq</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -175,8 +193,11 @@
     </div>
 
     <script>
+      let autoRefresh = true;
+      let refreshIntervalMs = 5000;
+      let refreshTimer = null;
+
       let BASE = window.location.origin;
-      document.getElementById("baseUrl").value = BASE;
 
       function fmtDate(iso) {
         if (!iso) return "";
@@ -199,6 +220,38 @@
 
         return await resp.json();
       }
+
+      async function refreshAll() {
+        if (!autoRefresh) return;
+        try {
+          await loadLatest();
+          await loadHistory();
+          await loadSeries();
+          document.getElementById("autoInfo").textContent = "auto update ativo";
+        } catch (e) {
+          console.error(e);
+          document.getElementById("autoInfo").textContent = "erro no update";
+        }
+      }
+
+      function updateAutoButton() {
+        const btn = document.getElementById("btnToggleAuto");
+
+        if (autoRefresh) {
+          btn.textContent = "Pausar Auto Update";
+          btn.classList.remove("auto-btn-off");
+          btn.classList.add("auto-btn-on");
+        } else {
+          btn.textContent = "Retomar Auto Update";
+          btn.classList.remove("auto-btn-on");
+          btn.classList.add("auto-btn-off");
+        }
+      }
+
+      document.getElementById("btnToggleAuto").addEventListener("click", () => {
+        autoRefresh = !autoRefresh;
+        updateAutoButton();
+      });
 
       function salasDistintas(items) {
         const set = new Set();
@@ -234,10 +287,17 @@
                           <td>${d.sala || "-"}</td>
                           <td>${d.temperatura}</td>
                           <td>${d.umidade}</td>
-                          <td>${d.poeira}</td>`;
+                          <td>${d.poeira}</td>
+                          <td>${d.seq ?? "-"}</td>`;
           tbody.appendChild(tr);
         }
       }
+
+      const SCALE_LIMITS = {
+        temperatura: { min: -10, max: 40 },
+        umidade:     { min: 0,   max: 100 },
+        poeira:      { min: 0,   max: 100 }
+      };
 
       function renderSeries(items, metricKey) {
         items = items.slice().reverse();
@@ -245,26 +305,68 @@
         const ctx = canvas.getContext("2d");
         const w = canvas.width = canvas.clientWidth;
         const h = canvas.height = canvas.clientHeight;
-        ctx.clearRect(0,0,w,h);
+
+        ctx.clearRect(0, 0, w, h);
 
         const vals = items.map(i => Number(i[metricKey]));
         if (vals.length === 0 || vals.some(v => isNaN(v))) return;
-        const min = Math.min(...vals);
-        const max = Math.max(...vals);
-        const pad = 12;
+
+        const min = SCALE_LIMITS[metricKey].min;
+        const max = SCALE_LIMITS[metricKey].max;
+        const minRead = Math.min(...vals);
+        const maxRead = Math.max(...vals);
+        const padLeft = 50;
+        const padRight = 12;
+        const padTop = 16;
+        const padBottom = 20;
         const nx = vals.length - 1 || 1;
 
-        ctx.lineWidth = 2;
-        ctx.beginPath();
+        ctx.font = "12px system-ui";
+        ctx.fillStyle = "#000";
+        ctx.strokeStyle = "#000";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
 
-        for (let i = 0; i < vals.length; i++) {
-          const x = pad + (w - 2*pad) * (i / nx);
-          const y = h - pad - (h - 2*pad) * ((vals[i] - min) / (max - min || 1));
-          if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        const ticks = 5;
+        for (let i = 0; i <= ticks; i++) {
+          const t = i / ticks;
+          const value = min + (max - min) * (1 - t);
+          const y = padTop + (h - padTop - padBottom) * t;
+
+          ctx.beginPath();
+          ctx.moveTo(padLeft - 5, y);
+          ctx.lineTo(padLeft, y);
+          ctx.stroke();
+
+          ctx.fillText(value.toFixed(1), padLeft - 8, y);
+
+          ctx.save();
+          ctx.strokeStyle = "#eee";
+          ctx.beginPath();
+          ctx.moveTo(padLeft, y);
+          ctx.lineTo(w - padRight, y);
+          ctx.stroke();
+          ctx.restore();
         }
 
+        ctx.beginPath();
+        ctx.moveTo(padLeft, padTop);
+        ctx.lineTo(padLeft, h - padBottom);
         ctx.stroke();
-        ctx.fillText(`min ${min.toFixed(2)} | máx ${max.toFixed(2)}`, pad, pad + 8);
+
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < vals.length; i++) {
+          const x = padLeft + (w - padLeft - padRight) * (i / nx);
+          const y = padTop + (h - padTop - padBottom) * (1 - (vals[i] - min) / (max - min || 1));
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(`   min ${minRead.toFixed(2)} | max ${maxRead.toFixed(2)}`, padLeft, 2);
       }
 
       function renderLatestMultiple(items) {
@@ -278,9 +380,22 @@
         let html = "<div class='grid'>";
         
         for (const item of items) {
-          html += `<div class='card'>
+          const alertaTemp = item.temperatura > 30;
+          const alertaUmid = item.umidade < 30 || item.umidade > 70;
+          const alertaPoeira = item.poeira > 80;
+
+          const emAlerta = alertaTemp || alertaUmid || alertaPoeira;
+          const estiloAlerta = emAlerta ? "background-color:#ffe5e5;border-color:#ff8080;" : "";
+
+          let msgAlerta = "";
+          if (emAlerta) {
+            msgAlerta = "<small><b>Alerta:</b> condição fora do ideal.</small><br>";
+          }
+
+          html += `<div class='card' style="${estiloAlerta}">
             <b>${item.sala || "-"}</b><br>
-            <small>${fmtDate(item.timestamp)}</small>
+            <small>${fmtDate(item.timestamp)}</small><br>
+            ${msgAlerta}
             <table>
               <tr><th>Temperatura (°C)</th><td>${item.temperatura}</td></tr>
               <tr><th>Umidade (%)</th><td>${item.umidade}</td></tr>
@@ -359,19 +474,6 @@
       document.getElementById("btnSeries").addEventListener("click", loadSeries);
       document.getElementById("btnLatest").addEventListener("click", loadLatest);
       document.getElementById("btnHist").addEventListener("click", loadHistory);
-      document.getElementById("btnTest").addEventListener("click", async () => {
-        BASE = document.getElementById("baseUrl").value.trim().replace(/\/+$/,'');
-        try {
-          const items = await apiList({limit: 1});
-          document.getElementById("srvInfo").textContent = `OK`;
-        } catch(e) {
-          document.getElementById("srvInfo").textContent = `Falhou`;
-        }
-      });
-      document.getElementById("baseUrl").addEventListener("change", e => {
-        BASE = e.target.value.trim().replace(/\/+$/,'');
-      });
-
 
       async function boot() {
         const rooms = await loadRoomsFromRecent();
@@ -383,6 +485,9 @@
         await loadSeries();
         await loadLatest();
         await loadHistory();
+
+        updateAutoButton();
+        refreshTimer = setInterval(refreshAll, refreshIntervalMs);
       }
       boot();
     </script>
