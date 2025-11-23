@@ -6,9 +6,15 @@ from urllib import request
 from typing import Dict, Any
 import argparse
 import sys
+import time
 
 SERVER_URL = "http://localhost:8080/api/data"
 BAUD_RATE = 9600
+
+LAST_SENT = {}
+MIN_INTERVAL = 5.0  # segundos
+
+SEQ_COUNTER = {}
 
 def find_serial_port():
     print("Procurando portas seriais...")
@@ -29,9 +35,7 @@ def find_serial_port():
 def parse_serial_line(line):
     """
     Converte a linha serial para o formato JSON.
-    
     Formato de entrada: "id=rack1;temp=23.7;umid=55.2;poeira=42.1"
-
     Formato de saída: {"sala": "rack1", "temp": 23.7, ...}
     """
     try:
@@ -40,7 +44,8 @@ def parse_serial_line(line):
             "temp": None,
             "umid": None,
             "poeira": None,
-            "timestamp": None
+            "timestamp": None,
+            "seq": None,
         }
 
         parts = [p.strip() for p in line.split(';') if p.strip()]
@@ -55,8 +60,16 @@ def parse_serial_line(line):
                     measure['umid'] = round(float(value), 2)
                 elif key == 'poeira':
                     measure['poeira'] = round(float(value), 2)
+                elif key == 'seq':
+                    measure['seq'] = int(value)
+                    
         # Verifica se todas as chaves esperadas estão presentes
-        if all(measure[k] is not None for k in ['sala', 'temp', 'umid', 'poeira']):
+        if measure["sala"] is not None and measure["temp"] is not None and measure["umid"] is not None and measure["poeira"] is not None:
+            if measure["seq"] is None:
+                sala = measure["sala"]
+                last_seq = SEQ_COUNTER.get(sala, 0)
+                measure["seq"] = last_seq + 1
+                SEQ_COUNTER[sala] = measure["seq"]
             return measure
         else:
             print(f"[Parser] Erro: Dados incompletos na linha: '{line}'")
@@ -67,13 +80,46 @@ def parse_serial_line(line):
         return None
 
 def send_to_server(measure):
+    sala = measure.get("sala")
+    now = time.time()
+
+    if sala is not None:
+        last = LAST_SENT.get(sala)
+        if last is not None:
+            last_time, last_payload = last
+            if now - last_time < MIN_INTERVAL and last_payload == (measure["temp"], measure["umid"], measure["poeira"]):
+                print(f"[HTTP] Ignorando envio redundante da sala {sala}")
+                return
+
+        LAST_SENT[sala] = (now, (measure["temp"], measure["umid"], measure["poeira"]))
+
+    payload = {
+        "sala": measure["sala"],
+        "temp": measure["temp"],
+        "umid": measure["umid"],
+        "poeira": measure["poeira"],
+    }
+
+    if measure.get("seq") is not None:
+        payload["seq"] = measure["seq"]
+
+    if measure.get("timestamp") is not None:
+        payload["timestamp"] = measure["timestamp"]
+
+    data = json.dumps(payload).encode("utf-8")
+    req = request.Request(
+        SERVER_URL,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
     try:
-        data = json.dumps(measure).encode("utf-8")
-        req = request.Request(SERVER_URL, data=data, method="POST", headers={"Content-Type": "application/json"})
         with request.urlopen(req, timeout=5) as resp:
-            print(f"[HTTP] ({resp.status}) {resp.read().decode()}")
+            body = resp.read()
+            print(f"[HTTP] Enviado para o servidor, status={resp.status}, resposta={body.decode(errors='ignore')}")
     except Exception as e:
-        print(f"[HTTP] Erro: {e}")
+        print(f"[HTTP] Erro ao enviar para o servidor: {e}")
 
 
 def read_from_stdin():

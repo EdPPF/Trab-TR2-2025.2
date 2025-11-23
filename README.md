@@ -1,4 +1,4 @@
-Descrição Geral
+# Descrição Geral
 
 Este trabalho propõe o desenvolvimento de um sistema distribuído para **monitorar condições ambientais** (ex.: temperatura, umidade, poeira) em salas de equipamentos da universidade, empregando comunicação **LoRa** entre nós sensores e um **gateway** que transmite os dados a um **servidor** para visualização e análise.
 
@@ -14,7 +14,7 @@ Cada grupo (máx. 3 alunos) deverá projetar e implementar as três camadas prin
 
 ---
 
-Requisitos Gerais
+## Requisitos Gerais
 
 - O desenvolvimento do **servidor** e do **gateway** deve ser feito **preferencialmente com bibliotecas padrão do Python**, como:
 
@@ -27,7 +27,7 @@ Requisitos Gerais
 
 ---
 
-## **Entregável 1 – Arquitetura e Protótipo Lógico** 
+### **Entregável 1 – Arquitetura e Protótipo Lógico** 
 
 **Objetivo:**
 Definir a arquitetura completa do sistema e desenvolver um protótipo funcional do servidor e dashboard, mesmo com dados simulados (sem hardware real).
@@ -57,7 +57,7 @@ Documento (3–4 páginas) contendo:
 
 ***
 
-## **Entregável 2 – Integração com Hardware**
+### **Entregável 2 – Integração com Hardware**
 
 **Objetivo:**
 Integrar o sistema com os componentes físicos (Arduino e LoRa), garantindo comunicação ponta a ponta.
@@ -75,6 +75,25 @@ Integrar o sistema com os componentes físicos (Arduino e LoRa), garantindo comu
 - Documento curto (2–3 páginas) descrevendo: - Integração e ajustes realizados.
 - Problemas e soluções.
 
+### **Entregável 3 – Otimização e Avaliação Final**
+
+**Objetivo:**
+Otimizar o sistema para eficiência energética e confiabilidade, consolidando o projeto final.
+
+**Escopo:** 
+- Implementação de estratégias de redução de consumo nos clientes (deep sleep, duty cycle, envio sob demanda).
+- Ajustes no servidor e gateway para reduzir tráfego desnecessário.
+- Avaliação experimental com medições de: - Latência média de transmissão.
+- Perda de pacotes.
+- Consumo de energia estimado.
+- Melhoria do dashboard com histórico de dados e alertas simples.
+- Relatório técnico consolidado (8–10 páginas). O relatório deve conter captures de pacotes, denotando a comunicação, comparação das alternativas de eficiência energética/consumo e eventual degradação da qualidade dos dados sensoriados. Dashboard e demais funcionalidades devem ser apresentadas no relatório. 
+
+**Produtos esperados:** 
+- Código-fonte final documentado (cliente, gateway, servidor).
+- Relatório técnico completo.
+- Demonstração funcional do sistema otimizado.
+
 ***
 
 # Rodando o Projeto
@@ -91,7 +110,7 @@ cd monitoramento-lora/server
 python3 server.py
 ```
 
-Abra o navegador em `http://localhost:8080`
+Abra `http://localhost:8080` no navegador. 
 
 ## 1. Teste via cliente simulado (`send_simulated.py`):
 
@@ -101,8 +120,6 @@ Em outro terminal, execute:
 cd monitoramento-lora/gateway
 python3 simulated_data.py
 ```
-
-Por fim, atualize a dashboard para ver os resultados.
 
 ## 2. Teste do gateway serial sem hardware:
 
@@ -119,8 +136,6 @@ Digite os dados, como por exemplo:
 id=rack1;temp=25;umid=40;poeira=30
 ```
 
-Por fim, atualize a dashboard para ver os resultados.
-
 ## 3. Teste com hardware
 
 O módulo ESP LoRa Sensor é conectado a um sensor de temperatura e umidade DHT11 por meio do pino D4 (GPIO4).
@@ -134,8 +149,6 @@ python3 gateway_serial_forwarder.py
 # ou passagem manual da porta
 python3 gateway_serial_forwarder.py --serial <porta>
 ```
-
-Por fim, atualize a dashboard para ver os resultados.
 
 ### 3.1 Apenas com sensor 
 
@@ -181,3 +194,4 @@ trab
 `sensor_lora.ino` -> código que envia os dados via LoRa (simulados ou sensores reais).
 
 `gateway_lora.ino` -> código que recebe via LoRa e envia pela USB Serial.
+
