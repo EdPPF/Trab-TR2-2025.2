@@ -5,12 +5,8 @@ from urllib import request
 
 SERVER_URL = "http://localhost:8080/api/data"
 
-seq = 0
-last = {
-    "temp": None,
-    "umid": None,
-    "poeira": None
-}
+seq_por_sala = {}
+last_por_sala = {}
 
 DELTA_TEMP = 0.5
 DELTA_UMID = 2.0
@@ -28,7 +24,13 @@ def send(measure):
         print("Resposta:", resp.status, resp.read().decode())
 
 def gerar_leituras(sala, forcar_alerta=False, forcar_sem_mudanca=False):
-    global seq, last
+    if sala not in seq_por_sala:
+        seq_por_sala[sala] = 0
+
+    if sala not in last_por_sala:
+        last_por_sala[sala] = {"temp": None, "umid": None, "poeira": None}
+
+    last = last_por_sala[sala]
 
     if forcar_alerta:
         temp = 32.0
@@ -53,12 +55,14 @@ def gerar_leituras(sala, forcar_alerta=False, forcar_sem_mudanca=False):
     if not precisaEnviar:
         return None
 
-    last["temp"] = temp
-    last["umid"] = umid
-    last["poeira"] = poeira
+    seq_envio = seq_por_sala[sala]
+    seq_por_sala[sala] += 1
 
-    seq_envio = seq
-    seq += 1
+    last_por_sala[sala] = {
+        "temp": temp,
+        "umid": umid,
+        "poeira": poeira
+    }
 
     return {
         "sala": sala,
@@ -75,10 +79,10 @@ if __name__ == "__main__":
     for i in range(100):
         sala = salas[i % len(salas)]
 
-        if i % 5 == 0:
+        if i % 10 == 0:
             medida = gerar_leituras(sala, forcar_alerta=True)
             print("Forçando ALERTA:", medida)
-        elif i % 5 == 4:
+        elif i % 10 == 4:
             medida = gerar_leituras(sala, forcar_sem_mudanca=True)
             print("Forçando SEM MUDANÇA (esperado não enviar):", medida)
         else:

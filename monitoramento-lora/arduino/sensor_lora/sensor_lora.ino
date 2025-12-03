@@ -26,8 +26,6 @@ const float DELTA_TEMP = 0.5;
 const float DELTA_UMID = 2.0;
 const float DELTA_POEIRA = 5.0;
 
-unsigned long seq = 0;
-
 void setup() {
   Serial.begin(9600);
   dht.begin();
@@ -39,12 +37,12 @@ void setup() {
 
 void loop() {
   // Dados simulados
-  // float temp = 20.0 + (float)random(0, 100) / 10.0;
-  // float umid = 40.0 + (float)random(0, 400) / 10.0;
+  float temp = 20.0 + (float)random(0, 100) / 10.0;
+  float umid = 40.0 + (float)random(0, 400) / 10.0;
   
   // Usando sensor DHT11
-  float temp = dht.readTemperature();
-  float umid = dht.readHumidity();
+  // float temp = dht.readTemperature();
+  // float umid = dht.readHumidity();
   float poeira = (float)random(0, 1000) / 10.0;
 
   if (isnan(temp) || isnan(umid)) {
@@ -70,7 +68,6 @@ void loop() {
   lastPoeira = poeira;
 
   String line = "id=" + String(SALA)
-                + ";seq=" + String(seq++)
                 + ";temp=" + String(temp, 2)
                 + ";umid=" + String(umid, 2)
                 + ";poeira=" + String(poeira, 2);
