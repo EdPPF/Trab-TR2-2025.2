@@ -7,6 +7,7 @@ SERVER_URL = "http://localhost:8080/api/data"
 
 seq_por_sala = {}
 last_por_sala = {}
+sem_mudanca_por_sala = {}
 
 DELTA_TEMP = 0.5
 DELTA_UMID = 2.0
@@ -26,11 +27,13 @@ def send(measure):
 def gerar_leituras(sala, forcar_alerta=False, forcar_sem_mudanca=False):
     if sala not in seq_por_sala:
         seq_por_sala[sala] = 0
-
     if sala not in last_por_sala:
         last_por_sala[sala] = {"temp": None, "umid": None, "poeira": None}
+    if sala not in sem_mudanca_por_sala:
+        sem_mudanca_por_sala[sala] = 0
 
     last = last_por_sala[sala]
+    contador = sem_mudanca_por_sala[sala]
 
     if forcar_alerta:
         temp = 32.0
@@ -41,16 +44,32 @@ def gerar_leituras(sala, forcar_alerta=False, forcar_sem_mudanca=False):
         umid = round(last["umid"] + random.uniform(-0.5, 0.5), 2)
         poeira = round(last["poeira"] + random.uniform(-1.0, 1.0), 2)
     else:
-        temp = round(20 + random.random()*10, 2)
-        umid = round(30 + random.random()*50, 2)
-        poeira = round(random.random()*100, 2)
+        temp = round(20 + random.random() * 10, 2)
+        umid = round(30 + random.random() * 50, 2)
+        poeira = round(random.random() * 100, 2)
 
-    mudouTemp = last["temp"] is None or abs(temp - last["temp"]) >= DELTA_TEMP
-    mudouUmid = last["umid"] is None or abs(umid - last["umid"]) >= DELTA_UMID
-    mudouPoeira = last["poeira"] is None or abs(poeira - last["poeira"]) >= DELTA_POEIRA
+    mudouTemp = last["temp"] is not None and abs(temp - last["temp"]) >= DELTA_TEMP
+    mudouUmid = last["umid"] is not None and abs(umid - last["umid"]) >= DELTA_UMID
+    mudouPoeira = last["poeira"] is not None and abs(poeira - last["poeira"]) >= DELTA_POEIRA
 
     alerta = temp > 30.0 or umid < 30.0
-    precisaEnviar = mudouTemp or mudouUmid or mudouPoeira or alerta
+
+    primeira_leitura = last["temp"] is None or last["umid"] is None or last["poeira"] is None
+    precisaEnviar = False
+
+    if primeira_leitura:
+        precisaEnviar = True
+        contador = 0
+    elif mudouTemp or mudouUmid or mudouPoeira or alerta:
+        precisaEnviar = True
+        contador = 0
+    else:
+        contador += 1
+        if contador >= 10:
+            precisaEnviar = True
+            contador = 0
+
+    sem_mudanca_por_sala[sala] = contador
 
     if not precisaEnviar:
         return None
@@ -84,7 +103,7 @@ if __name__ == "__main__":
             print("Forçando ALERTA:", medida)
         elif i % 10 == 4:
             medida = gerar_leituras(sala, forcar_sem_mudanca=True)
-            print("Forçando SEM MUDANÇA (esperado não enviar):", medida)
+            print("Forçando SEM MUDANÇA (pode não enviar):", medida)
         else:
             medida = gerar_leituras(sala)
             print("Normal:", medida)
@@ -92,6 +111,6 @@ if __name__ == "__main__":
         if medida is not None:
             send(medida)
         else:
-            print("Nenhum envio (variação abaixo dos limiares).")
+            print("Nenhum envio (variação abaixo dos limiares, ainda dentro dos 10 ciclos).")
 
         time.sleep(1)

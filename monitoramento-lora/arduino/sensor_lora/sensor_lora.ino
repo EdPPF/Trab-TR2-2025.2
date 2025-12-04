@@ -18,13 +18,19 @@ const long FREQ = 433E6;
 
 const uint64_t INTERVALO_ENVIO_US = 60ULL * 1000000ULL;  // 60 s
 
-float lastTemp = NAN;
-float lastUmid = NAN;
-float lastPoeira = NAN;
+RTC_DATA_ATTR float lastTemp = NAN;
+RTC_DATA_ATTR float lastUmid = NAN;
+RTC_DATA_ATTR float lastPoeira = NAN;
+RTC_DATA_ATTR int ciclosSemEnvio = 0;
 
 const float DELTA_TEMP = 0.5;
 const float DELTA_UMID = 2.0;
 const float DELTA_POEIRA = 5.0;
+
+void dormir() {
+  esp_sleep_enable_timer_wakeup(INTERVALO_ENVIO_US);
+  esp_deep_sleep_start();
+}
 
 void setup() {
   Serial.begin(9600);
@@ -51,16 +57,31 @@ void loop() {
     return;
   }
 
-  bool mudouTemp = isnan(lastTemp) || fabs(temp - lastTemp) >= DELTA_TEMP;
-  bool mudouUmid = isnan(lastUmid) || fabs(umid - lastUmid) >= DELTA_UMID;
-  bool mudouPoeira = isnan(lastPoeira) || fabs(poeira - lastPoeira) >= DELTA_POEIRA;
-  bool alerta = temp > 30.0 || umid < 30.0;
+  bool mudouTemp = !isnan(lastTemp) && fabs(temp - lastTemp) >= DELTA_TEMP;
+  bool mudouUmid = !isnan(lastUmid) && fabs(umid - lastUmid) >= DELTA_UMID;
+  bool mudouPoeira = !isnan(lastPoeira) && fabs(poeira - lastPoeira) >= DELTA_POEIRA;
+  bool alerta = temp > 35.0 || umid < 25.0;
 
-  bool precisaEnviar = mudouTemp || mudouUmid || mudouPoeira || alerta;
+  bool primeiraLeitura = isnan(lastTemp) || isnan(lastUmid) || isnan(lastPoeira);
+  bool precisaEnviar = false;
+
+  if (primeiraLeitura) {
+    precisaEnviar = true;
+    ciclosSemEnvio = 0;
+  } else if (mudouTemp || mudouUmid || mudouPoeira || alerta) {
+    precisaEnviar = true;
+    ciclosSemEnvio = 0;
+  } else {
+    ciclosSemEnvio++;
+    if (ciclosSemEnvio >= 10) {
+      precisaEnviar = true;
+      ciclosSemEnvio = 0;
+    }
+  }
 
   if (!precisaEnviar) {
-    esp_sleep_enable_timer_wakeup(INTERVALO_ENVIO_US);
-    esp_deep_sleep_start();
+    Serial.println("Sem envio, abaixo do delta, ciclos sem envio: " + String(ciclosSemEnvio));
+    dormir();
   }
 
   lastTemp = temp;
